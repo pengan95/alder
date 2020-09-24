@@ -1,0 +1,29 @@
+{
+    "name": "incomm-alder/api-sdk",
+    "description": "InComm's PHP SDK for Alder restful api",
+    "type": "library",
+    "require": {
+        "guzzlehttp/guzzle": "6.2.2",
+        "ext-json": "*",
+        "ext-http": "*"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Hopper Huang",
+            "email": "hopperhuang@meikaitech.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "repositories": {
+        "packagist": {
+            "type": "composer",
+            "url": "https://packagist.phpcomposer.com"
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "InCommAlder\\": "src/"
+        }
+    }
+}
