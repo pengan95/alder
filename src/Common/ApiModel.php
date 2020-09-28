@@ -2,7 +2,8 @@
 
 namespace InCommAlder\Common;
 
-use Psr\Http\Message\ResponseInterface;
+
+use InCommAlder\Exceptions\AlderResponseException;
 
 trait ApiModel
 {
@@ -10,18 +11,58 @@ trait ApiModel
     /**
      * @param string $path
      * @param string $method
-     * @param array $payload
+     * @param string $payload
      * @param ApiContext $apiContext
-     * @param string $endpoint_type
      * @param array $headers
-     * @return ResponseInterface
+     * @param string $endpoint_type
+     * @param null $handler
+     * @return \GuzzleHttp\Psr7\Response
+     *
+     * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public static function executeCall($path, $method, $payload, $apiContext, $endpoint_type = 'api', $headers = [], $handler = null)
+    public static function executeCall($path, $method, $apiContext, $payload = '', $headers = [], $endpoint_type = 'api', $handler = null)
     {
         if (!$handler) {
             $handler = new RestHandler();
         }
 
+        $headers = array_merge(
+            [
+                'Accept' => 'application/json',
+                'Authorization' => 'Bearer ' . self::loadAccessToken($apiContext, $handler)
+            ],
+            $headers
+        );
+
+        $endpoint = $apiContext->getEndpoint($endpoint_type);
+        $url = $endpoint . $path;
+
+        //Make the execution call
+        $response = $handler->call($method, $url, $payload, $headers);
+
+        if ($response->getStatusCode() == 401) {
+            $apiContext->auth($handler);
+            $headers['Authorization'] = 'Bearer ' . self::loadAccessToken($apiContext, $handler);
+            $response = $handler->call($method, $url, $payload, $headers);
+        }
+
+        //记录请求,响应日志
+//        if ($apiContext->getConfig('log_path')) {
+//            error_log('');
+//        }
+        //TODO throw some exception like 404, 500
+        if ($response->getStatusCode() >= 400 && $response->getStatusCode() != 409) {
+            if($response->getBody()->getContents()) {
+                throw new AlderResponseException($response->getBody(),$response->getStatusCode());
+            }
+            throw new AlderResponseException($response->getReasonPhrase(),$response->getStatusCode());
+        }
+
+        return $response;
+    }
+
+    private static function loadAccessToken($apiContext, $handler = null)
+    {
         $credential = $apiContext->getCredential();
 
         if (!($credential && $credential->valid())) {
@@ -29,13 +70,6 @@ trait ApiModel
             $credential = $apiContext->getCredential();
         }
 
-        $headers = array_merge($headers,
-            ['Authorization' => 'Bearer ' . $credential->getAccessToken()]
-        );
-
-        $endpoint = $apiContext->getEndpoint($endpoint_type);
-        $url = $endpoint . $path;
-        //Make the execution call
-        return $handler->call($url, $method, $payload, $headers);
+        return $credential->getAccessToken();
     }
 }

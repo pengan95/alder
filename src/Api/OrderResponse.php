@@ -4,6 +4,7 @@
 namespace InCommAlder\Api;
 
 use InCommAlder\Common\ResourceModel;
+use InCommAlder\Exceptions\AlderResponseException;
 
 /**
  * @property string $OrderUri
@@ -22,11 +23,10 @@ use InCommAlder\Common\ResourceModel;
  * @property string $EmailTheme
  * @property \InCommAlder\Api\Recipient[] $Recipients
  *
- * @method OrderResponse get($order_uri)
- * @method \InCommAlder\Api\Card[] listCards($order_uri)
 */
 class OrderResponse extends ResourceModel
 {
+    const ENDPOINT_TYPE = 'api';
     /**
      * @return string
      */
@@ -296,5 +296,53 @@ class OrderResponse extends ResourceModel
         $this->Recipients = $Recipients;
         return $this;
     }
-    
+
+    public function get($apiContext)
+    {
+        $headers = [
+            'Accept' => 'application/json'
+        ];
+
+        $response = self::executeCall(
+            'orders/' . $this->getOrderUri(),
+            'GET',
+            $apiContext,
+            '',
+            $headers
+        );
+
+
+        if ($response->getStatusCode() == 200) {
+            return $this->fromJson($response->getBody());
+        } else {
+            throw new AlderResponseException(
+                $response->getReasonPhrase(),
+                $response->getStatusCode()
+            );
+        }
+    }
+
+    public function cards($apiContext)
+    {
+        $headers = [
+            'Accept' => 'application/json'
+        ];
+
+        $response = self::executeCall(
+            'orders/' . $this->getOrderUri() . '/cards',
+            'GET',
+            $apiContext,
+            '',
+            $headers
+        );
+
+        if ($response->getStatusCode() == 200) {
+            return (new Card())->getList($response->getBody());
+        } else {
+            throw new AlderResponseException(
+                $response->getReasonPhrase(),
+                $response->getStatusCode()
+            );
+        }
+    }
 }

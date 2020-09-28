@@ -10,8 +10,6 @@ use InCommAlder\Common\ResourceModel;
  * @property string $token_type
  * @property integer $expires_in
  * @property integer $expired_at
- *
- * @method boolean valid()
  */
 class AuthTokenCredential extends ResourceModel
 {
@@ -77,5 +75,17 @@ class AuthTokenCredential extends ResourceModel
     public function getExpiredAt()
     {
         return $this->expired_at;
+    }
+
+    public function valid()
+    {
+        if (!$this->getAccessToken()) {
+            return false;
+        }
+        // 1 minute forward set expired
+        if ($this->getExpiredAt() < time() - 60) {
+            return false;
+        }
+        return true;
     }
 }

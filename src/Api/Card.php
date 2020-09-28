@@ -4,6 +4,7 @@
 namespace InCommAlder\Api;
 
 use InCommAlder\Common\ResourceModel;
+use InCommAlder\Exceptions\AlderResponseException;
 
 /**
  * @package InCommAlder\Api
@@ -27,11 +28,6 @@ use InCommAlder\Common\ResourceModel;
  * @property string $CreatedOn
  * @property string $UsageInstructions
  * @property string $FormattedUsageInstructions
- *
- * TODO LIST
- * @method Card get()
- * @method string balance()
- * @method boolean void()
  */
 class Card extends ResourceModel
 {
@@ -377,4 +373,60 @@ class Card extends ResourceModel
         return $this;
     }
 
+    public function get($apiContext)
+    {
+        $response = self::executeCall(
+            'cards/' . $this->getCardUri(),
+            'GET',
+            $apiContext,
+            '',
+            []
+        );
+        if ($response->getStatusCode() == 200) {
+            return $this->fromJson($response->getBody());
+        } else {
+            throw new AlderResponseException(
+                "get card [" . $this->getCardUri() . "] failed, reason " . $response->getReasonPhrase(),
+                $response->getStatusCode()
+            );
+        }
+    }
+
+    public function void($apiContext)
+    {
+        $response = self::executeCall(
+            'cards/' . $this->getCardUri() .'/void',
+            'POST',
+            $apiContext,
+            '',
+            []
+        );
+        if ($response->getStatusCode() == 200) {
+            return true;
+        } else {
+            throw new AlderResponseException(
+                "void card[" . $this->getCardUri() . "] failed, reason " . $response->getReasonPhrase(),
+                $response->getStatusCode()
+            );
+        }
+    }
+
+    public function balance($apiContext)
+    {
+        $response = self::executeCall(
+            'cards/' . $this->getCardUri() .'/balance',
+            'GET',
+            $apiContext,
+            '',
+            []
+        );
+        if ($response->getStatusCode() == 200) {
+            return true;
+        } else {
+            throw new AlderResponseException(
+                "get card[" . $this->getCardUri() . "] balance failed, reason " . $response->getReasonPhrase(),
+                $response->getStatusCode()
+            );
+        }
+    }
 }

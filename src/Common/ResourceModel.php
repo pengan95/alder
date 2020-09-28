@@ -28,6 +28,15 @@ class ResourceModel
         }
     }
 
+    public function getList($json_str){
+        JsonValidator::validate($json_str);
+        $data = json_decode($json_str, true);
+        foreach ($data as $index => $item) {
+            $data[$index] = $this->fromArray($item);
+        }
+        return $data;
+    }
+
     public function fromJson($json_str)
     {
         JsonValidator::validate($json_str);
@@ -146,7 +155,7 @@ class ResourceModel
      * @param int $options http://php.net/manual/en/json.constants.php
      * @return string
      */
-    public function toJSON($options = 0)
+    public function toJson($options = 0)
     {
         // Because of PHP Version 5.3, we cannot use JSON_UNESCAPED_SLASHES option
         // Instead we would use the str_replace command for now.
@@ -170,13 +179,25 @@ class ResourceModel
     }
 
     /**
+     * Time param convert to Datetime
+     * @param string $time_str
+     * @param string $time_zone
+     * @return \DateTime
+     *
+     * @throws \Exception
+     */
+    public static function str2Datetime($time_str, $time_zone = \DateTimeZone::UTC) {
+        return new \DateTime($time_str, new \DateTimeZone($time_zone));
+    }
+
+    /**
      * Magic Method for toString
      *
      * @return string
      */
     public function __toString()
     {
-        return $this->toJSON(JSON_PRETTY_PRINT);
+        return $this->toJson(JSON_PRETTY_PRINT);
     }
 
 

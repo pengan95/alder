@@ -241,7 +241,7 @@ class Recipient extends ResourceModel
     }
 
     /**
-     * @return OrderProduct[]
+     * @return \InCommAlder\Api\OrderProduct[]
      */
     public function getProducts()
     {

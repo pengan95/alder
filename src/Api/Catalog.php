@@ -4,17 +4,17 @@
 namespace InCommAlder\Api;
 
 use InCommAlder\Common\ResourceModel;
+use InCommAlder\Exceptions\AlderResponseException;
 
 /**
  * @property integer $id
  * @property integer $programId
  * @property string $name
  * @property \InCommAlder\Api\CatalogProduct[] $products
- *
- * @method Catalog get($program_id, $cate_id);
 */
 class Catalog extends ResourceModel
 {
+    const ENDPOINT_TYPE = 'app';
     /**
      * @return int
      */
@@ -86,5 +86,24 @@ class Catalog extends ResourceModel
         $this->products = $products;
         return $this;
     }
-    
+
+    public function get($apiContext)
+    {
+        $response = self::executeCall(
+            'programs/programs/' . $this->getProgramId() . '/catalogs/' . $this->getId(),
+            'GET',
+            $apiContext,
+            '',
+            [],
+            self::ENDPOINT_TYPE
+        );
+        if ($response->getStatusCode() == 200) {
+            return $this->fromJson($response->getBody());
+        } else {
+            throw new AlderResponseException(
+                "get catalog[" . $this->getId() . "] from program[" . $this->getProgramId() . "] failed, reason " . $response->getReasonPhrase(),
+                $response->getStatusCode()
+            );
+        }
+    }
 }
