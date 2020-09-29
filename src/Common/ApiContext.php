@@ -5,6 +5,7 @@ namespace InCommAlder\Common;
 
 
 use InCommAlder\Api\AuthTokenCredential;
+use function GuzzleHttp\Psr7\str;
 
 
 /**
@@ -44,21 +45,51 @@ class ApiContext
 
     /**
      * @param RestHandler $handler
+     * @param boolean $refresh force refresh token
     */
-    public function auth($handler)
+    public function auth($handler, $refresh = false)
     {
-        $endpoint = $this->getEndpoint('api');
-        $url = $endpoint . 'auth/token';
+        $credential_json = $this->loadCredential();
+        if ($refresh || !$credential_json) {
+            $credential_json = $this->requestAuth($handler);
+            $this->cacheCredential($credential_json);
+        }
+        $credential = new AuthTokenCredential();
+        $credential->fromJson($credential_json);
+        $this->setCredential($credential);
+    }
 
+    public function requestAuth($handler)
+    {
+        $url = self::API_ALDER_ENDPOINT . 'auth/token';
         $headers = [
             'Content-Type' => 'application/x-www-form-urlencoded',
             'Accept' => '*/*'
         ];
         $response = $handler->call('POST', $url, $this->payload(), $headers);
 
+        return $response->getBody();
+    }
+
+    public function loadCredential()
+    {
+        $cache_filename = $this->getConfig('credential_cache');
+        if (!$cache_filename || !file_exists($cache_filename)) {
+            return '';
+        }
         $credential = new AuthTokenCredential();
-        $credential->fromJson($response->getBody());
-        $this->setCredential($credential);
+        $credential->fromJson(file_get_contents($this->getConfig('credential_cache')));
+        if ($credential->valid()) {
+            return $credential->toJson();
+        }
+        return '';
+    }
+
+    public function cacheCredential($credential)
+    {
+        if ($this->getConfig('credential_cache')) {
+            file_put_contents($this->getConfig('credential_cache'),(string)$credential);
+        }
     }
 
     public function getEndpoint($endpoint_type)

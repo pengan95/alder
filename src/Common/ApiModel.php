@@ -41,7 +41,7 @@ trait ApiModel
         $response = $handler->call($method, $url, $payload, $headers);
 
         if ($response->getStatusCode() == 401) {
-            $apiContext->auth($handler);
+            $apiContext->auth($handler, true);
             $headers['Authorization'] = 'Bearer ' . self::loadAccessToken($apiContext, $handler);
             $response = $handler->call($method, $url, $payload, $headers);
         }
